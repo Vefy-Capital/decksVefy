@@ -1,0 +1,36 @@
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@200;300;400&family=JetBrains+Mono:wght@400&display=swap");
+
+.login-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: var(--gutter);
+}
+
+.login-panel {
+  width: min(440px, 100%);
+  display: grid;
+  gap: 22px;
+  padding: 28px;
+  background: var(--carbon);
+  border: var(--hairline);
+  border-radius: 8px;
+}
+
+.login-panel h1 {
+  font-family: var(--font-main);
+  font-size: 32px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.login-error {
+  margin: 0;
+  color: var(--champagne);
+  font-size: 13px;
+}
+
+.share-shell {
+  position: fixed;
+  inset: 58px 0 0;
+}
