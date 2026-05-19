@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
-import { getDeckByShareToken } from "../../../lib/db";
+import { getDeckByShareToken, isShareable } from "../../../lib/db";
 
 export default async function SharePage({ params }) {
   const { token } = await params;
   const deck = await getDeckByShareToken(token);
   if (!deck) notFound();
+  const unavailable = !isShareable(deck);
 
   return (
     <main className="viewer-body">
@@ -18,7 +19,14 @@ export default async function SharePage({ params }) {
         </div>
       </header>
       <section className="share-shell">
-        <iframe className="deck-frame" src={`/api/share/${encodeURIComponent(token)}/content`} title={deck.title} />
+        {unavailable ? (
+          <div className="share-unavailable">
+            <p className="eyebrow">Private access</p>
+            <h1>Este deck ya no esta disponible.</h1>
+          </div>
+        ) : (
+          <iframe className="deck-frame" src={`/api/share/${encodeURIComponent(token)}/content`} title={deck.title} />
+        )}
       </section>
     </main>
   );

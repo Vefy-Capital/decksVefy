@@ -43,6 +43,9 @@ export async function POST(request) {
       blobUrl: stored.blobUrl,
       blobPath: stored.blobPath,
       shareToken: createShareToken(),
+      linkStatus: "ACTIVE",
+      views: 0,
+      lastViewedAt: null,
       size: Buffer.byteLength(html, "utf8"),
       createdAt: now,
       updatedAt: now

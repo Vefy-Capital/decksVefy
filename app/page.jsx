@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { isAdminRequest } from "../lib/auth";
+import { listDecks } from "../lib/db";
 import DeckVaultClient from "../components/DeckVaultClient";
 
 export default async function HomePage() {
@@ -7,5 +8,6 @@ export default async function HomePage() {
     redirect("/login");
   }
 
-  return <DeckVaultClient />;
+  const decks = await listDecks();
+  return <DeckVaultClient initialDecks={decks} />;
 }

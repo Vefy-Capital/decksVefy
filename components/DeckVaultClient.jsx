@@ -2,8 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+const LINK_FILTERS = ["ALL", "ACTIVE", "INACTIVE", "ARCHIVED"];
+
 function deckUrl(deck) {
   return `${window.location.origin}/share/${encodeURIComponent(deck.shareToken || deck.id)}`;
+}
+
+function titleFromFile(fileName) {
+  return String(fileName || "")
+    .replace(/\.html?$/i, "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function formatBytes(bytes) {
@@ -13,32 +23,51 @@ function formatBytes(bytes) {
 }
 
 function formatDate(value) {
-  return new Intl.DateTimeFormat("es-AR", {
+  if (!value) return "NO DATE";
+  return new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric"
-  }).format(new Date(value));
+  }).format(new Date(value)).toUpperCase();
 }
 
-export default function DeckVaultClient() {
-  const [decks, setDecks] = useState([]);
-  const [selectedId, setSelectedId] = useState(null);
+function relativeTime(value) {
+  if (!value) return "Never";
+  const diff = Date.now() - new Date(value).getTime();
+  const hours = Math.round(diff / 1000 / 60 / 60);
+  if (hours < 1) return "Just now";
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  return `${days}d ago`;
+}
+
+function linkClass(value) {
+  return `chip link-${String(value || "").toLowerCase()}`;
+}
+
+export default function DeckVaultClient({ initialDecks = [] }) {
+  const [decks, setDecks] = useState(initialDecks);
+  const [selectedId, setSelectedId] = useState(initialDecks[0]?.id || null);
   const [query, setQuery] = useState("");
-  const [previewMode, setPreviewMode] = useState("desktop");
-  const [fileName, setFileName] = useState("Seleccionar deck");
+  const [linkFilter, setLinkFilter] = useState("ALL");
+  const [fileName, setFileName] = useState("Arrastra un HTML o selecciona un archivo");
+  const [title, setTitle] = useState("");
   const [toast, setToast] = useState("");
   const [busy, setBusy] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
 
   const selectedDeck = decks.find((deck) => deck.id === selectedId) || null;
+  const deckCountLabel = `${decks.length} ${decks.length === 1 ? "DECK" : "DECKS"}`;
+
   const filteredDecks = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    if (!needle) return decks;
-    return decks.filter((deck) =>
-      [deck.title, deck.client, deck.notes].some((value) =>
+    return decks.filter((deck) => {
+      const matchesQuery = !needle || [deck.title, deck.client].some((value) =>
         String(value || "").toLowerCase().includes(needle)
-      )
-    );
-  }, [decks, query]);
+      );
+      return matchesQuery && (linkFilter === "ALL" || deck.linkStatus === linkFilter);
+    });
+  }, [decks, linkFilter, query]);
 
   async function loadDecks() {
     const response = await fetch("/api/decks", { cache: "no-store" });
@@ -53,13 +82,32 @@ export default function DeckVaultClient() {
     setTimeout(() => setToast(""), 1800);
   }
 
+  async function patchDeck(deck, patch) {
+    const response = await fetch(`/api/decks/${encodeURIComponent(deck.id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch)
+    });
+    if (!response.ok) {
+      showToast("No se pudo guardar");
+      return null;
+    }
+    const updated = await response.json();
+    setDecks((current) => current.map((item) => item.id === updated.id ? updated : item));
+    return updated;
+  }
+
   async function copyDeckLink(deck) {
+    if (deck.linkStatus !== "ACTIVE") {
+      showToast("Link inactivo");
+      return;
+    }
     await navigator.clipboard.writeText(deckUrl(deck));
     showToast("Link copiado");
   }
 
   async function deleteDeck(deck) {
-    const confirmed = window.confirm(`Eliminar "${deck.title}" del repositorio?`);
+    const confirmed = window.confirm(`Eliminar "${deck.title}" del vault?`);
     if (!confirmed) return;
     await fetch(`/api/decks/${encodeURIComponent(deck.id)}`, { method: "DELETE" });
     setSelectedId((current) => (current === deck.id ? null : current));
@@ -73,12 +121,12 @@ export default function DeckVaultClient() {
     const data = new FormData(form);
     const file = data.get("deckFile");
     if (!file || !file.name) return;
+    if (!String(data.get("title") || "").trim()) {
+      data.set("title", titleFromFile(file.name));
+    }
 
     setBusy(true);
-    const response = await fetch("/api/decks", {
-      method: "POST",
-      body: data
-    });
+    const response = await fetch("/api/decks", { method: "POST", body: data });
     setBusy(false);
 
     if (!response.ok) {
@@ -89,15 +137,20 @@ export default function DeckVaultClient() {
 
     const deck = await response.json();
     form.reset();
-    setFileName("Seleccionar deck");
+    setTitle("");
+    setFileName("Arrastra un HTML o selecciona un archivo");
     setSelectedId(deck.id);
     await loadDecks();
-    showToast("Deck importado");
+    showToast("Deck subido");
   }
 
   useEffect(() => {
     loadDecks();
   }, []);
+
+  useEffect(() => {
+    setActionsOpen(false);
+  }, [selectedDeck?.id]);
 
   return (
     <>
@@ -106,16 +159,16 @@ export default function DeckVaultClient() {
           <span className="kV">V</span><span className="ke">e</span><span className="kf">f</span><span className="ky">y</span>
         </a>
         <div className="header-meta">
-          <span>Deck vault</span>
-          <span>{decks.length} {decks.length === 1 ? "deck" : "decks"}</span>
+          <span>PRIVATE ACCESS</span>
+          <span>DECK VAULT · {deckCountLabel}</span>
         </div>
       </header>
 
       <main className="app-shell">
         <section className="intro-panel">
-          <div>
-            <p className="eyebrow">Private repository</p>
-            <h1>Presentaciones listas para enviar, abrir y revisar en cualquier pantalla.</h1>
+          <div className="hero-copy">
+            <p className="eyebrow">PRIVATE DECK VAULT</p>
+            <h1>Decks listos para compartir.<br />Acceso privado.<br />Links bajo control.</h1>
           </div>
           <form className="import-panel" onSubmit={importDeck}>
             <label className="file-drop" htmlFor="deckFile">
@@ -127,29 +180,29 @@ export default function DeckVaultClient() {
                 required
                 onChange={(event) => {
                   const file = event.target.files?.[0];
-                  setFileName(file?.name || "Seleccionar deck");
+                  if (!file) {
+                    setFileName("Arrastra un HTML o selecciona un archivo");
+                    return;
+                  }
+                  setFileName(file.name);
+                  setTitle((current) => current || titleFromFile(file.name));
                 }}
               />
-              <span className="file-label">Importar HTML</span>
+              <span className="file-label">UPLOAD HTML</span>
               <strong>{fileName}</strong>
+              <small>FORMAT · HTML ONLY</small>
             </label>
-            <div className="field-grid">
-              <label>
-                <span>Titulo</span>
-                <input name="title" type="text" placeholder="Series A overview" />
-              </label>
-              <label>
-                <span>Cliente</span>
-                <input name="client" type="text" placeholder="Nombre o cuenta" />
-              </label>
-            </div>
             <label>
-              <span>Notas internas</span>
-              <textarea name="notes" rows="3" placeholder="Contexto, version o proximo paso" />
+              <span>Nombre del deck</span>
+              <input name="title" type="text" placeholder="Se completa con el nombre del archivo" value={title} onChange={(event) => setTitle(event.target.value)} />
+            </label>
+            <label>
+              <span>Cliente</span>
+              <input name="client" type="text" placeholder="Cliente o cuenta" />
             </label>
             <button className="primary-button" type="submit" disabled={busy}>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-              {busy ? "Importando" : "Agregar deck"}
+              {busy ? "Subiendo" : "Subir deck"}
             </button>
           </form>
         </section>
@@ -157,20 +210,21 @@ export default function DeckVaultClient() {
         <section className="toolbar" aria-label="Filtros de biblioteca">
           <label className="search-field">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></svg>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="Buscar por titulo, cliente o nota" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="Buscar por titulo o cliente" />
           </label>
-          <div className="view-toggle" role="group" aria-label="Modo de vista">
-            <button className={`toggle-button ${previewMode === "desktop" ? "active" : ""}`} onClick={() => setPreviewMode("desktop")} type="button">Web</button>
-            <button className={`toggle-button ${previewMode === "mobile" ? "active" : ""}`} onClick={() => setPreviewMode("mobile")} type="button">Mobile</button>
+          <div className="filter-row compact-filters">
+            <Filter label="Link" value={linkFilter} options={LINK_FILTERS} onChange={setLinkFilter} />
           </div>
         </section>
 
         <section className="content-grid">
           <div className="deck-list" aria-live="polite">
             {!filteredDecks.length ? (
-              <div className="empty-preview">
-                <p className="eyebrow">Library</p>
-                <p>No hay decks para mostrar.</p>
+              <div className="empty-preview vault-empty">
+                <p className="eyebrow">Vault empty</p>
+                <h2>Todavia no hay decks en el vault.</h2>
+                <p>Subi un HTML para crear una version privada y compartible.</p>
+                <button className="primary-button" type="button" onClick={() => document.getElementById("deckFile")?.click()}>Subir primer deck</button>
               </div>
             ) : null}
             {filteredDecks.map((deck) => (
@@ -178,7 +232,9 @@ export default function DeckVaultClient() {
                 <button className="deck-main" type="button" onClick={() => setSelectedId(deck.id)}>
                   <span className="deck-title">{deck.title}</span>
                   <span className="deck-client">{deck.client || "Sin cliente asignado"}</span>
-                  <span className="deck-notes">{formatDate(deck.updatedAt)} · {formatBytes(deck.size)}{deck.notes ? ` · ${deck.notes}` : ""}</span>
+                  <span className="deck-meta-line">{formatDate(deck.updatedAt)} · {formatBytes(deck.size)}</span>
+                  <span className="deck-meta-line">{deck.views || 0} VIEWS · LAST VIEWED {relativeTime(deck.lastViewedAt).toUpperCase()}</span>
+                  <span className={linkClass(deck.linkStatus)}>LINK · {deck.linkStatus}</span>
                 </button>
                 <div className="deck-actions">
                   <a className="icon-button open-link" href={`/share/${encodeURIComponent(deck.shareToken || deck.id)}`} target="_blank" rel="noreferrer" aria-label="Abrir deck" title="Abrir deck">
@@ -186,9 +242,6 @@ export default function DeckVaultClient() {
                   </a>
                   <button className="icon-button share-button" type="button" aria-label="Copiar link" title="Copiar link" onClick={() => copyDeckLink(deck)}>
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2a5 5 0 0 0 7.1 7.1l1.1-1.1"/></svg>
-                  </button>
-                  <button className="icon-button delete-button" type="button" aria-label="Eliminar deck" title="Eliminar deck" onClick={() => deleteDeck(deck)}>
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12"/><path d="M9 7V5h6v2"/><path d="M9 10v8"/><path d="M15 10v8"/><path d="M7 7l1 14h8l1-14"/></svg>
                   </button>
                 </div>
               </article>
@@ -203,15 +256,48 @@ export default function DeckVaultClient() {
             ) : (
               <div className="preview-frame-shell">
                 <div className="preview-topline">
-                  <h2>{selectedDeck.title}</h2>
-                  <button className="primary-button" type="button" onClick={() => copyDeckLink(selectedDeck)}>
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2a5 5 0 0 0 7.1 7.1l1.1-1.1"/></svg>
-                    Compartir
-                  </button>
+                  <div>
+                    <h2>{selectedDeck.title}</h2>
+                    <div className="preview-meta">
+                      <span className={linkClass(selectedDeck.linkStatus)}>LINK · {selectedDeck.linkStatus}</span>
+                      <span>{formatBytes(selectedDeck.size)}</span>
+                      <span>{formatDate(selectedDeck.updatedAt)}</span>
+                    </div>
+                    {selectedDeck.linkStatus !== "ACTIVE" ? (
+                      <p className="link-warning">El link no esta activo. Reactivalo o regeneralo para volver a compartir este deck.</p>
+                    ) : null}
+                  </div>
+                  <div className="preview-actions">
+                    <button className="primary-button" type="button" onClick={() => copyDeckLink(selectedDeck)} disabled={selectedDeck.linkStatus !== "ACTIVE"}>Compartir</button>
+                    <a className="ghost-button" href={`/share/${encodeURIComponent(selectedDeck.shareToken || selectedDeck.id)}`} target="_blank" rel="noreferrer">Abrir</a>
+                    <button className="ghost-button" type="button" onClick={() => copyDeckLink(selectedDeck)} disabled={selectedDeck.linkStatus !== "ACTIVE"}>Copiar link</button>
+                    <div className="menu-wrap">
+                      <button className="icon-button" type="button" aria-label="Mas acciones" title="Mas acciones" onClick={() => setActionsOpen((value) => !value)}>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h.01"/><path d="M12 12h.01"/><path d="M19 12h.01"/></svg>
+                      </button>
+                      {actionsOpen ? (
+                        <div className="action-menu">
+                          <button type="button" onClick={() => patchDeck(selectedDeck, { action: "deactivate-link" })}>Desactivar link</button>
+                          <button type="button" onClick={() => patchDeck(selectedDeck, { action: "activate-link" })}>Activar link</button>
+                          <button type="button" onClick={() => patchDeck(selectedDeck, { action: "regenerate-link" }).then((deck) => deck && copyDeckLink(deck))}>Regenerar link</button>
+                          <button type="button" onClick={() => patchDeck(selectedDeck, { action: "archive" })}>Archivar</button>
+                          <button type="button" onClick={() => deleteDeck(selectedDeck)}>Eliminar</button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
-                <div className={`preview-frame-wrap ${previewMode === "mobile" ? "mobile" : ""}`}>
+                <div className="preview-frame-wrap">
                   <iframe className="deck-frame" src={`/api/decks/${encodeURIComponent(selectedDeck.id)}/content`} title={selectedDeck.title} />
                 </div>
+                <section className="deck-dashboard">
+                  <p className="eyebrow">Deck dashboard</p>
+                  <div className="metric-grid">
+                    <div><span>{selectedDeck.views || 0}</span><small>Total views</small></div>
+                    <div><span>{relativeTime(selectedDeck.lastViewedAt)}</span><small>Last viewed</small></div>
+                    <div><span>{selectedDeck.linkStatus}</span><small>Link status</small></div>
+                  </div>
+                </section>
               </div>
             )}
           </aside>
@@ -219,5 +305,16 @@ export default function DeckVaultClient() {
       </main>
       {toast ? <div className="toast">{toast}</div> : null}
     </>
+  );
+}
+
+function Filter({ label, value, options, onChange }) {
+  return (
+    <label className="select-filter">
+      <span>{label}</span>
+      <select value={value} onChange={(event) => onChange(event.target.value)}>
+        {options.map((option) => <option key={option}>{option}</option>)}
+      </select>
+    </label>
   );
 }

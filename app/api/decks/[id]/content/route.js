@@ -13,6 +13,9 @@ export async function GET(_request, { params }) {
   if (!deck) {
     return new Response("Deck no encontrado", { status: 404 });
   }
+  if (deck.linkStatus === "ARCHIVED") {
+    return new Response("Deck archivado", { status: 410 });
+  }
 
   if (deck.blobUrl?.startsWith("http")) {
     const response = await fetch(deck.blobUrl, { cache: "no-store" });
