@@ -166,9 +166,8 @@ export default function DeckVaultClient({ initialDecks = [] }) {
 
       <main className="app-shell">
         <section className="intro-panel">
-          <div className="hero-copy">
-            <p className="eyebrow">PRIVATE DECK VAULT</p>
-            <h1>Decks listos para compartir.<br />Acceso privado.<br />Links bajo control.</h1>
+          <div className="hero-media">
+            <img src="/vefy-billboard.png" alt="Vefy billboard" />
           </div>
           <form className="import-panel" onSubmit={importDeck}>
             <label className="file-drop" htmlFor="deckFile">
@@ -213,7 +212,7 @@ export default function DeckVaultClient({ initialDecks = [] }) {
             <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="Buscar por titulo o cliente" />
           </label>
           <div className="filter-row compact-filters">
-            <Filter label="Link" value={linkFilter} options={LINK_FILTERS} onChange={setLinkFilter} />
+            <Filter value={linkFilter} options={LINK_FILTERS} onChange={setLinkFilter} />
           </div>
         </section>
 
@@ -264,7 +263,7 @@ export default function DeckVaultClient({ initialDecks = [] }) {
                       <span>{formatDate(selectedDeck.updatedAt)}</span>
                     </div>
                     {selectedDeck.linkStatus !== "ACTIVE" ? (
-                      <p className="link-warning">El link no esta activo. Reactivalo o regeneralo para volver a compartir este deck.</p>
+                      <p className="link-warning">El link no esta activo. Reactivalo para volver a compartir este deck.</p>
                     ) : null}
                   </div>
                   <div className="preview-actions">
@@ -279,8 +278,6 @@ export default function DeckVaultClient({ initialDecks = [] }) {
                         <div className="action-menu">
                           <button type="button" onClick={() => patchDeck(selectedDeck, { action: "deactivate-link" })}>Desactivar link</button>
                           <button type="button" onClick={() => patchDeck(selectedDeck, { action: "activate-link" })}>Activar link</button>
-                          <button type="button" onClick={() => patchDeck(selectedDeck, { action: "regenerate-link" }).then((deck) => deck && copyDeckLink(deck))}>Regenerar link</button>
-                          <button type="button" onClick={() => patchDeck(selectedDeck, { action: "archive" })}>Archivar</button>
                           <button type="button" onClick={() => deleteDeck(selectedDeck)}>Eliminar</button>
                         </div>
                       ) : null}
@@ -308,10 +305,9 @@ export default function DeckVaultClient({ initialDecks = [] }) {
   );
 }
 
-function Filter({ label, value, options, onChange }) {
+function Filter({ value, options, onChange }) {
   return (
     <label className="select-filter">
-      <span>{label}</span>
       <select value={value} onChange={(event) => onChange(event.target.value)}>
         {options.map((option) => <option key={option}>{option}</option>)}
       </select>
