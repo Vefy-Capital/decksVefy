@@ -161,6 +161,9 @@ export default function DeckVaultClient({ initialDecks = [] }) {
         <div className="header-meta">
           <span>PRIVATE ACCESS</span>
           <span>DECK VAULT · {deckCountLabel}</span>
+          <form action="/api/logout" method="post">
+            <button className="header-logout" type="submit">Cerrar sesion</button>
+          </form>
         </div>
       </header>
 
@@ -267,9 +270,8 @@ export default function DeckVaultClient({ initialDecks = [] }) {
                     ) : null}
                   </div>
                   <div className="preview-actions">
-                    <button className="primary-button" type="button" onClick={() => copyDeckLink(selectedDeck)} disabled={selectedDeck.linkStatus !== "ACTIVE"}>Compartir</button>
+                    <button className="primary-button" type="button" onClick={() => copyDeckLink(selectedDeck)} disabled={selectedDeck.linkStatus !== "ACTIVE"}>Copiar link</button>
                     <a className="ghost-button" href={`/share/${encodeURIComponent(selectedDeck.shareToken || selectedDeck.id)}`} target="_blank" rel="noreferrer">Abrir</a>
-                    <button className="ghost-button" type="button" onClick={() => copyDeckLink(selectedDeck)} disabled={selectedDeck.linkStatus !== "ACTIVE"}>Copiar link</button>
                     <div className="menu-wrap">
                       <button className="icon-button" type="button" aria-label="Mas acciones" title="Mas acciones" onClick={() => setActionsOpen((value) => !value)}>
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h.01"/><path d="M12 12h.01"/><path d="M19 12h.01"/></svg>

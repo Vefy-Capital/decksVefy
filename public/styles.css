@@ -92,6 +92,7 @@ a {
 
 .header-meta {
   display: flex;
+  align-items: center;
   gap: 18px;
   color: var(--fog);
   font-family: var(--font-mono);
@@ -102,6 +103,28 @@ a {
 
 .header-meta span + span::before {
   color: var(--silt);
+}
+
+.header-meta form {
+  margin: 0;
+}
+
+.header-logout {
+  min-height: 34px;
+  padding: 8px 12px;
+  color: var(--fog);
+  background: transparent;
+  border: var(--hairline);
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: var(--font-main);
+  font-size: 12px;
+  font-weight: 300;
+}
+
+.header-logout:hover {
+  color: var(--bone);
+  border-color: rgba(245,241,234,0.16);
 }
 
 .app-shell {
