@@ -4,8 +4,18 @@ import { useEffect, useMemo, useState } from "react";
 
 const LINK_FILTERS = ["ALL", "ACTIVE", "INACTIVE", "ARCHIVED"];
 
+function slugify(value) {
+  return String(value || "deck")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 72) || "deck";
+}
+
 function deckUrl(deck) {
-  return `${window.location.origin}/share/${encodeURIComponent(deck.shareToken || deck.id)}`;
+  return `${window.location.origin}/share/${encodeURIComponent(slugify(deck.title))}/${encodeURIComponent(deck.shareToken || deck.id)}`;
 }
 
 function titleFromFile(fileName) {
@@ -239,7 +249,7 @@ export default function DeckVaultClient({ initialDecks = [] }) {
                   <span className={linkClass(deck.linkStatus)}>LINK · {deck.linkStatus}</span>
                 </button>
                 <div className="deck-actions">
-                  <a className="icon-button open-link" href={`/share/${encodeURIComponent(deck.shareToken || deck.id)}`} target="_blank" rel="noreferrer" aria-label="Abrir deck" title="Abrir deck">
+                  <a className="icon-button open-link" href={`/share/${encodeURIComponent(slugify(deck.title))}/${encodeURIComponent(deck.shareToken || deck.id)}`} target="_blank" rel="noreferrer" aria-label="Abrir deck" title="Abrir deck">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg>
                   </a>
                   <button className="icon-button share-button" type="button" aria-label="Copiar link" title="Copiar link" onClick={() => copyDeckLink(deck)}>
@@ -271,7 +281,7 @@ export default function DeckVaultClient({ initialDecks = [] }) {
                   </div>
                   <div className="preview-actions">
                     <button className="primary-button" type="button" onClick={() => copyDeckLink(selectedDeck)} disabled={selectedDeck.linkStatus !== "ACTIVE"}>Copiar link</button>
-                    <a className="ghost-button" href={`/share/${encodeURIComponent(selectedDeck.shareToken || selectedDeck.id)}`} target="_blank" rel="noreferrer">Abrir</a>
+                    <a className="ghost-button" href={`/share/${encodeURIComponent(slugify(selectedDeck.title))}/${encodeURIComponent(selectedDeck.shareToken || selectedDeck.id)}`} target="_blank" rel="noreferrer">Abrir</a>
                     <div className="menu-wrap">
                       <button className="icon-button" type="button" aria-label="Mas acciones" title="Mas acciones" onClick={() => setActionsOpen((value) => !value)}>
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h.01"/><path d="M12 12h.01"/><path d="M19 12h.01"/></svg>
