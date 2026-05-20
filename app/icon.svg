@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="8" fill="#0A0A0B"/>
+  <text x="31" y="39"
+        text-anchor="middle"
+        fill="#F5F1EA"
+        font-family="Georgia, serif"
+        font-size="24"
+        font-style="italic"
+        font-weight="700"
+        letter-spacing="-2">Vefy</text>
+</svg>
