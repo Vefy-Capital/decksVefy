@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-const LINK_FILTERS = ["ALL", "ACTIVE", "INACTIVE", "ARCHIVED"];
+const LINK_FILTERS = ["ALL", "ACTIVE", "INACTIVE"];
 
 function deckUrl(deck) {
   return `${window.location.origin}/share/${encodeURIComponent(deck.id)}`;
@@ -108,6 +108,15 @@ export default function DeckVaultClient({ initialDecks = [] }) {
     }
     await navigator.clipboard.writeText(deckUrl(deck));
     showToast("Link copiado");
+  }
+
+  async function renameDeck(deck) {
+    const nextTitle = window.prompt("Nuevo nombre del deck", deck.title);
+    if (nextTitle === null) return;
+    const title = nextTitle.trim();
+    if (!title || title === deck.title) return;
+    await patchDeck(deck, { title });
+    showToast("Nombre actualizado");
   }
 
   async function deleteDeck(deck) {
@@ -257,6 +266,7 @@ export default function DeckVaultClient({ initialDecks = [] }) {
                     </button>
                     {actionsOpen === deck.id ? (
                       <div className="action-menu">
+                        <button type="button" onClick={() => renameDeck(deck)}>Cambiar nombre</button>
                         <button type="button" onClick={() => patchDeck(deck, { action: "deactivate-link" })}>Desactivar link</button>
                         <button type="button" onClick={() => patchDeck(deck, { action: "activate-link" })}>Activar link</button>
                         <button type="button" onClick={() => deleteDeck(deck)}>Eliminar</button>
@@ -296,6 +306,7 @@ export default function DeckVaultClient({ initialDecks = [] }) {
                       </button>
                       {actionsOpen === "preview" ? (
                         <div className="action-menu">
+                          <button type="button" onClick={() => renameDeck(selectedDeck)}>Cambiar nombre</button>
                           <button type="button" onClick={() => patchDeck(selectedDeck, { action: "deactivate-link" })}>Desactivar link</button>
                           <button type="button" onClick={() => patchDeck(selectedDeck, { action: "activate-link" })}>Activar link</button>
                           <button type="button" onClick={() => deleteDeck(selectedDeck)}>Eliminar</button>

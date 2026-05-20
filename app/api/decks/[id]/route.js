@@ -37,6 +37,12 @@ export async function PATCH(request, { params }) {
 
   const patch = { ...payload };
   delete patch.action;
+  if (Object.hasOwn(patch, "title")) {
+    patch.title = String(patch.title || "").trim();
+    if (!patch.title) {
+      return NextResponse.json({ error: "El nombre del deck no puede estar vacio." }, { status: 400 });
+    }
+  }
 
   if (action === "deactivate-link") {
     patch.linkStatus = "INACTIVE";
