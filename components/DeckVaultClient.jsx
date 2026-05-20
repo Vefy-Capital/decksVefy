@@ -4,12 +4,31 @@ import { useEffect, useMemo, useState } from "react";
 
 const LINK_FILTERS = ["ALL", "ACTIVE", "INACTIVE"];
 
+function slugify(value) {
+  return String(value || "deck")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 64) || "deck";
+}
+
+function shareSuffix(deck) {
+  const match = String(deck.id || "").match(/([a-f0-9]{8})$/i);
+  return match ? match[1].toLowerCase() : String(deck.id || deck.shareToken || "deck");
+}
+
+function shareSlug(deck) {
+  return `${slugify(deck.title)}-${shareSuffix(deck)}`;
+}
+
 function deckUrl(deck) {
-  return `${window.location.origin}/share/${encodeURIComponent(deck.id)}`;
+  return `${window.location.origin}${deckPath(deck)}`;
 }
 
 function deckPath(deck) {
-  return `/share/${encodeURIComponent(deck.id)}`;
+  return `/share/${encodeURIComponent(shareSlug(deck))}`;
 }
 
 function titleFromFile(fileName) {
