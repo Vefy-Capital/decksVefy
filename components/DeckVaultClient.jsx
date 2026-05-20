@@ -58,7 +58,7 @@ export default function DeckVaultClient({ initialDecks = [] }) {
   const [title, setTitle] = useState("");
   const [toast, setToast] = useState("");
   const [busy, setBusy] = useState(false);
-  const [actionsOpen, setActionsOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(null);
 
   const selectedDeck = decks.find((deck) => deck.id === selectedId) || null;
   const deckCountLabel = `${decks.length} ${decks.length === 1 ? "DECK" : "DECKS"}`;
@@ -153,7 +153,7 @@ export default function DeckVaultClient({ initialDecks = [] }) {
   }, []);
 
   useEffect(() => {
-    setActionsOpen(false);
+    setActionsOpen(null);
   }, [selectedDeck?.id]);
 
   return (
@@ -243,12 +243,26 @@ export default function DeckVaultClient({ initialDecks = [] }) {
                   <span className={linkClass(deck.linkStatus)}>LINK · {deck.linkStatus}</span>
                 </button>
                 <div className="deck-actions">
-                  <a className="icon-button open-link" href={deckPath(deck)} target="_blank" rel="noreferrer" aria-label="Abrir deck" title="Abrir deck">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg>
-                  </a>
-                  <button className="icon-button share-button" type="button" aria-label="Copiar link" title="Copiar link" onClick={() => copyDeckLink(deck)}>
+                  <button className="icon-button share-button deck-card-copy" type="button" aria-label="Copiar link" title="Copiar link" onClick={() => copyDeckLink(deck)} disabled={deck.linkStatus !== "ACTIVE"}>
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2a5 5 0 0 0 7.1 7.1l1.1-1.1"/></svg>
+                    <span>Copiar link</span>
                   </button>
+                  <a className="icon-button open-link deck-card-open" href={deckPath(deck)} target="_blank" rel="noreferrer" aria-label="Abrir deck" title="Abrir deck">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg>
+                    <span>Abrir</span>
+                  </a>
+                  <div className="menu-wrap row-menu">
+                    <button className="icon-button" type="button" aria-label="Mas acciones" title="Mas acciones" onClick={() => setActionsOpen((value) => value === deck.id ? null : deck.id)}>
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h.01"/><path d="M12 12h.01"/><path d="M19 12h.01"/></svg>
+                    </button>
+                    {actionsOpen === deck.id ? (
+                      <div className="action-menu">
+                        <button type="button" onClick={() => patchDeck(deck, { action: "deactivate-link" })}>Desactivar link</button>
+                        <button type="button" onClick={() => patchDeck(deck, { action: "activate-link" })}>Activar link</button>
+                        <button type="button" onClick={() => deleteDeck(deck)}>Eliminar</button>
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
               </article>
             ))}
@@ -277,10 +291,10 @@ export default function DeckVaultClient({ initialDecks = [] }) {
                     <button className="primary-button" type="button" onClick={() => copyDeckLink(selectedDeck)} disabled={selectedDeck.linkStatus !== "ACTIVE"}>Copiar link</button>
                     <a className="ghost-button" href={deckPath(selectedDeck)} target="_blank" rel="noreferrer">Abrir</a>
                     <div className="menu-wrap">
-                      <button className="icon-button" type="button" aria-label="Mas acciones" title="Mas acciones" onClick={() => setActionsOpen((value) => !value)}>
+                      <button className="icon-button" type="button" aria-label="Mas acciones" title="Mas acciones" onClick={() => setActionsOpen((value) => value === "preview" ? null : "preview")}>
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h.01"/><path d="M12 12h.01"/><path d="M19 12h.01"/></svg>
                       </button>
-                      {actionsOpen ? (
+                      {actionsOpen === "preview" ? (
                         <div className="action-menu">
                           <button type="button" onClick={() => patchDeck(selectedDeck, { action: "deactivate-link" })}>Desactivar link</button>
                           <button type="button" onClick={() => patchDeck(selectedDeck, { action: "activate-link" })}>Activar link</button>
