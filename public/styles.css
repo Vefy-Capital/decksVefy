@@ -523,14 +523,15 @@ svg {
 }
 
 .link-active {
-  color: var(--champagne);
-  border-color: rgba(201,179,131,0.22);
+  color: #9DB89F;
+  background: rgba(61,82,64,0.18);
+  border-color: rgba(157,184,159,0.28);
 }
 
 .link-inactive {
-  color: var(--titanium);
-  background: rgba(184,174,156,0.06);
-  border-color: rgba(184,174,156,0.28);
+  color: #C38F8A;
+  background: rgba(92,45,42,0.2);
+  border-color: rgba(195,143,138,0.3);
 }
 
 .link-archived {
