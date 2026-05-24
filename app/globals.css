@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@200;300;400&family=JetBrains+Mono:wght@400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&family=DM+Sans:ital,opsz,wght@0,9..40,200;0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300;1,9..40,400&family=Inter+Tight:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap");
 
 .login-shell {
   display: grid;
@@ -12,21 +12,21 @@
   display: grid;
   gap: 22px;
   padding: 28px;
-  background: var(--carbon);
+  background: var(--linen);
   border: var(--hairline);
-  border-radius: 8px;
+  border-radius: 0;
 }
 
 .login-panel h1 {
-  font-family: var(--font-main);
+  font-family: var(--font-display);
   font-size: 32px;
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1;
 }
 
 .login-error {
   margin: 0;
-  color: var(--champagne);
+  color: var(--moss);
   font-size: 13px;
 }
 
