@@ -440,8 +440,9 @@ svg {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 12px;
   align-items: start;
-  padding: 20px 18px 20px 0;
+  padding: 20px 18px;
   border-bottom: var(--hairline);
+  border-left: 2px solid transparent;
 }
 
 .deck-main {
@@ -454,6 +455,11 @@ svg {
   cursor: pointer;
   background: transparent;
   border: 0;
+}
+
+.deck-row.active {
+  background: var(--ivory);
+  border-left-color: var(--moss);
 }
 
 .deck-row.active .deck-title {
@@ -900,7 +906,14 @@ svg {
     padding: 18px;
     background: var(--linen);
     border: var(--hairline-strong);
+    border-left: var(--hairline-strong);
     border-radius: 0;
+  }
+
+  .deck-row.active {
+    background: var(--ivory);
+    border-color: rgba(61,82,64,0.28);
+    border-left: 2px solid var(--moss);
   }
 
   .deck-row.active .deck-title {
